@@ -2,9 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Newton’s Forward Interpolation</title>
 </head>
 <body>
+<h1>Newton’s Forward Interpolation</h1>
 
+<label for="xValues">Enter x values (comma-separated):</label><br>
+<input type="text" id="xValues" placeholder="0, 1, 2, 3"><br><br>
+
+<label for="yValues">Enter y values (comma-separated):</label><br>
+<input type="text" id="yValues" placeholder="1, 4, 9, 16"><br><br>
+
+<label for="interpolateX">Enter x to estimate f(x):</label><br>
+<input type="text" id="interpolateX" placeholder="1.5"><br><br>
+
+<button onclick="interpolate()">Estimate f(x)</button>
+
+<h2>Result:</h2>
+<p id="result"></p>
+
+<script>
+    function parseInput(input) {
+        return input.split(",").map(val => parseFloat(val.trim()));
+    }
+
+    function newtonsForwardInterpolation(x, y, x_target) {
+        let n = y.length;
+        let forwardDiff = Array.from({ length: n }, () => Array(n).fill(0));
+
+        for (let i = 0; i < n; i++) {
+            forwardDiff[i][0] = y[i];
+        }
+
+        for (let j = 1; j < n; j++) {
+            for (let i = 0; i < n - j; i++) {
+                forwardDiff[i][j] = forwardDiff[i + 1][j - 1] - forwardDiff[i][j - 1];
+            }
+        }
+
+        let h = x[1] - x[0];
+        let p = (x_target - x[0]) / h;
+        let interpolatedValue = y[0];
+
+        let factorial = 1;
+        let product = 1;
+        for (let i = 1; i < n; i++) {
+            factorial *= i;
+            product *= (p - (i - 1));
+            interpolatedValue += (product * forwardDiff[0][i]) / factorial;
+        }
+
+        return interpolatedValue;
+    }
+
+    function interpolate() {
+        try {
+            let x = parseInput(document.getElementById("xValues").value);
+            let y = parseInput(document.getElementById("yValues").value);
+            let x_target = parseFloat(document.getElementById("interpolateX").value);
+
+            if (x.length !== y.length) {
+                throw new Error("x and y must have the same number of points.");
+            }
+
+            if (isNaN(x_target)) {
+                throw new Error("Invalid x value for interpolation.");
+            }
+
+            let result = newtonsForwardInterpolation(x, y, x_target);
+            document.getElementById("result").innerHTML = `Interpolated value at x = ${x_target}: ${result.toFixed(6)}`;
+        } catch (error) {
+            document.getElementById("result").innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+        }
+    }
+</script>
 </body>
 </html>

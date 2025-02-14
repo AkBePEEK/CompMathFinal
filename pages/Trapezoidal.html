@@ -2,9 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Trapezoidal Rule Integration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.min.js"></script>
 </head>
 <body>
+<h1>Trapezoidal Rule - Numerical Integration</h1>
 
+<label for="functionInput">Enter function f(x):</label><br>
+<input type="text" id="functionInput" placeholder="e.g., x^2 + x"><br><br>
+
+<label for="lowerLimit">Enter lower limit (a):</label><br>
+<input type="number" id="lowerLimit" step="any" placeholder="0"><br><br>
+
+<label for="upperLimit">Enter upper limit (b):</label><br>
+<input type="number" id="upperLimit" step="any" placeholder="1"><br><br>
+
+<label for="subintervals">Enter number of subintervals (n):</label><br>
+<input type="number" id="subintervals" step="1" min="1" placeholder="4"><br><br>
+
+<button onclick="calculateIntegral()">Compute Integral</button>
+
+<h2>Results:</h2>
+<p id="result"></p>
+
+<script>
+    function trapezoidalRule(func, a, b, n) {
+        let h = (b - a) / n;
+        let xValues = Array.from({ length: n + 1 }, (_, i) => a + i * h);
+        let yValues = xValues.map(x => func.evaluate({ x }));
+
+        let integral = (h / 2) * (yValues[0] + 2 * yValues.slice(1, -1).reduce((sum, val) => sum + val, 0) + yValues[yValues.length - 1]);
+        return integral;
+    }
+
+    function calculateIntegral() {
+        try {
+            let funcInput = document.getElementById("functionInput").value;
+            let a = parseFloat(document.getElementById("lowerLimit").value);
+            let b = parseFloat(document.getElementById("upperLimit").value);
+            let n = parseInt(document.getElementById("subintervals").value);
+
+            if (isNaN(a) || isNaN(b) || isNaN(n) || n < 1) {
+                throw new Error("Invalid inputs. Ensure all values are correctly entered.");
+            }
+
+            let func = math.compile(funcInput);
+            let approxIntegral = trapezoidalRule(func, a, b, n);
+            let exactIntegral = math.integral(funcInput, 'x').evaluate({ x: b }) - math.integral(funcInput, 'x').evaluate({ x: a });
+
+            let error = Math.abs((exactIntegral - approxIntegral) / exactIntegral) * 100;
+
+            document.getElementById("result").innerHTML = `
+                    <p><strong>Trapezoidal Approximation:</strong> ${approxIntegral.toFixed(6)}</p>
+                    <p><strong>Exact Integral:</strong> ${exactIntegral.toFixed(6)}</p>
+                    <p><strong>Error:</strong> ${error.toFixed(2)}%</p>
+                `;
+        } catch (error) {
+            document.getElementById("result").innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+        }
+    }
+</script>
 </body>
 </html>

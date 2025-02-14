@@ -2,9 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Jacobi</title>
+    <script src="../index.js"></script>
 </head>
 <body>
+<h1>Jacobi</h1>
+<label for="equations">Enter System of Equations (e.g., "x+y+z=6; 2y+5z=-4; 2x+3y+z=27"):</label><br>
+<textarea id="equations" rows="3" placeholder="x+y+z=6; 2y+5z=-4; 2x+3y+z=27"></textarea><br>
 
+<label for="initialGuess">Initial Guess (e.g., "0, 0, 0"):</label><br>
+<input type="text" id="initialGuess" placeholder="0, 0, 0"><br>
+
+<label for="maxIterations">Maximum Iterations:</label><br>
+<input type="number" id="maxIterations" value="100"><br>
+
+<label for="tolerance">Tolerance (e.g., 1e-6):</label><br>
+<input type="number" id="tolerance" step="any" value="1e-6"><br>
+
+<input type="button" onclick="solveSystem()" value="Solve System">
+<h2>Result:</h2>
+<p id="result"></p>
+<script>
+    function parseEquations(equationString) {
+        const equations = equationString.split(";").map(eq => eq.trim());
+        const coefficients = [];
+
+        equations.forEach(eq => {
+            // Split into left-hand side (LHS) and right-hand side (RHS)
+            const [lhs, rhs] = eq.split("=");
+            const terms = lhs.split(/[\+\-]/).map(term => term.trim());
+
+            // Extract coefficients for x, y, z
+            let xCoeff = 0, yCoeff = 0, zCoeff = 0;
+            terms.forEach(term => {
+                if (term.includes("x")) xCoeff = parseFloat(term.replace("x", "")) || 1;
+                if (term.includes("y")) yCoeff = parseFloat(term.replace("y", "")) || 1;
+                if (term.includes("z")) zCoeff = parseFloat(term.replace("z", "")) || 1;
+            });
+
+            // Push coefficients and RHS constant
+            coefficients.push({
+                x: xCoeff,
+                y: yCoeff,
+                z: zCoeff,
+                constant: parseFloat(rhs)
+            });
+        });
+
+        return coefficients;
+    }
+    function solveSystem() {
+        try {
+            // Get user inputs
+            const equationString = document.getElementById("equations").value;
+            const initialGuess = document.getElementById("initialGuess").value.split(",").map(val => parseFloat(val.trim()));
+            const maxIterations = parseInt(document.getElementById("maxIterations").value);
+            const tolerance = parseFloat(document.getElementById("tolerance").value);
+
+            // Validate inputs
+            if (initialGuess.length !== 3) {
+                throw new Error("Initial guess must contain exactly 3 values (x, y, z).");
+            }
+
+            // Parse the system of equations
+            const coefficients = parseEquations(equationString);
+
+            // Solve the system using the Jacobi Method
+            const result = jacobiMethod(coefficients, initialGuess, maxIterations, tolerance);
+
+            // Display the result
+            document.getElementById("result").innerHTML = `
+            Solution:<br>
+            x = ${result.x.toFixed(6)}<br>
+            y = ${result.y.toFixed(6)}<br>
+            z = ${result.z.toFixed(6)}<br>
+            Iterations: ${result.iterations}
+        `;
+        } catch (error) {
+            // Handle errors
+            document.getElementById("result").innerHTML = error.message;
+        }
+    }
+</script>
 </body>
 </html>

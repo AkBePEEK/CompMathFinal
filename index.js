@@ -1,5 +1,3 @@
-import math from 'mathjs'
-import Plotly from 'plotly.js-dist'
 function absoluteError(x, y) {
     return Math.abs(x - y);
 }
@@ -15,7 +13,7 @@ function bisectionMethod(f, a, b, tol){
     }
 
     let midpoint = (a + b) / 2;
-
+    let iteration = 0
     while (Math.abs(f(midpoint)) > tol){
         if (f(a) * f(midpoint) < 0)
             b = midpoint;
@@ -23,47 +21,45 @@ function bisectionMethod(f, a, b, tol){
             a = midpoint;
             midpoint = (a + b) / 2;
         }
+        iteration += 1;
     }
-    return midpoint;
+    return [midpoint, iteration];
 }
 
 function secantMethod(f, x0, x1, tol){
+    let iteration = 0;
     while (Math.abs(f(x1)) > tol){
         let x_temp = x1 - f(x1) * (x1 - x0) / (f(x1) - f(x0));
         x0 = x1;
         x1 = x_temp;
+        iteration += 1;
     }
-    return x1;
+    return [x1, iteration];
 }
 
-function jacobiMethod(A, b, x0, tol, max_iter){
-    const n = A.length;
-    let x = x0.slice();
-    for (let j = 0; j < x0; j++) {
-        let xNew = new Array(n).fill(0);
-        for (let i = 0; i < n; i++) {
-            let summation = 0;
-            for (let j = 0; j < n; j++) {
-                if (j !== i) {
-                    summation += A[i][j] * x[j];
-                }
-            }
-            xNew[i] = (b[i] - summation) / A[i][i];
-        }
+function jacobiMethod(coefficients, initialGuess, maxIterations = 100, tolerance = 1e-6) {
+    let [x, y, z] = initialGuess;
 
-        let maxDiff = 0;
-        for (let i = 0; i < n; i++) {
-            maxDiff = Math.max(maxDiff, Math.abs(xNew[i] - x[i]));
-        }
-        if (maxDiff < tol) {
-            return xNew;
-        }
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        // Save previous values
+        let xPrev = x, yPrev = y, zPrev = z;
 
-        x = xNew.slice(); // Update x for the next iteration
-        console.log(x);
+        // Update values using the Jacobi Method
+        x = (coefficients[0].constant - coefficients[0].y * yPrev - coefficients[0].z * zPrev) / coefficients[0].x;
+        y = (coefficients[1].constant - coefficients[1].x * xPrev - coefficients[1].z * zPrev) / coefficients[1].y;
+        z = (coefficients[2].constant - coefficients[2].x * xPrev - coefficients[2].y * yPrev) / coefficients[2].z;
+
+        // Check for convergence
+        if (
+            Math.abs(x - xPrev) < tolerance &&
+            Math.abs(y - yPrev) < tolerance &&
+            Math.abs(z - zPrev) < tolerance
+        ) {
+            return { x, y, z, iterations: iteration + 1 };
+        }
     }
 
-    return x;
+    throw new Error("The method did not converge within the maximum number of iterations.");
 }
 
 function iterativeInverse(A, B, tol, maxIter) {
@@ -170,4 +166,33 @@ function plotLinearFit(x, y) {
     };
 
     Plotly.newPlot('plot', [trace1, trace2], layout);
+}
+
+function newtonsForwardDifference(x, y, x_target) {
+    let n = y.length;
+    let h = x[1] - x[0];
+
+    // Create forward difference table
+    let forwardDiff = Array(n).fill(0).map(() => Array(n).fill(0));
+
+    for (let i = 0; i < n; i++) {
+        forwardDiff[i][0] = y[i];
+    }
+
+    for (let j = 1; j < n; j++) {
+        for (let i = 0; i < n - j; i++) {
+            forwardDiff[i][j] = forwardDiff[i + 1][j - 1] - forwardDiff[i][j - 1];
+        }
+    }
+
+    // First derivative using Newton's forward formula at x = x_target
+    let index = x.indexOf(x_target);
+    if (index === -1) {
+        console.log("x_target not found in x array");
+        return;
+    }
+
+    let dy_dx = forwardDiff[index][1] / h;
+
+    console.log(`First derivative at x = ${x_target}: ${dy_dx}`);
 }

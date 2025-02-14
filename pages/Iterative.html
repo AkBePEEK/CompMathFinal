@@ -2,9 +2,168 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iterative Matrix Inversion</title>
+    <script src="../index.js" defer></script>
 </head>
 <body>
+<h1>Iterative Matrix Inversion</h1>
 
+<!-- Input Fields -->
+<label for="matrix">Enter Matrix (e.g., "1, 2; 3, 4"):</label><br>
+<textarea id="matrix" rows="3" placeholder="1, 2; 3, 4"></textarea><br>
+
+<label for="maxIterations">Maximum Iterations:</label><br>
+<input type="number" id="maxIterations" value="100"><br>
+
+<label for="tolerance">Tolerance (e.g., 1e-6):</label><br>
+<input type="number" id="tolerance" step="any" value="1e-6"><br>
+
+<input type="button" onclick="computeInverse()" value="Compute Inverse">
+
+<!-- Result Display -->
+<h2>Result:</h2>
+<p id="result"></p>
+<script>
+    // Helper function to parse a matrix from a string
+    function parseMatrix(matrixString) {
+        return matrixString.split(";").map(row => row.trim().split(",").map(val => parseFloat(val.trim())));
+    }
+
+    // Helper function to calculate the trace of a matrix
+    function trace(matrix) {
+        let sum = 0;
+        for (let i = 0; i < matrix.length; i++) {
+            sum += matrix[i][i];
+        }
+        return sum;
+    }
+
+    // Helper function to calculate the Frobenius norm squared
+    function frobeniusNormSquared(matrix) {
+        let sum = 0;
+        for (let i = 0; i < matrix.length; i++) {
+            for (let j = 0; j < matrix[i].length; j++) {
+                sum += matrix[i][j] * matrix[i][j];
+            }
+        }
+        return sum;
+    }
+
+    // Helper function to multiply two matrices
+    function multiplyMatrices(A, B) {
+        const rowsA = A.length, colsA = A[0].length;
+        const rowsB = B.length, colsB = B[0].length;
+
+        if (colsA !== rowsB) throw new Error("Matrix dimensions do not match for multiplication.");
+
+        const result = Array.from({ length: rowsA }, () => Array(colsB).fill(0));
+
+        for (let i = 0; i < rowsA; i++) {
+            for (let j = 0; j < colsB; j++) {
+                for (let k = 0; k < colsA; k++) {
+                    result[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // Helper function to subtract two matrices
+    function subtractMatrices(A, B) {
+        const rows = A.length, cols = A[0].length;
+
+        if (rows !== B.length || cols !== B[0].length) throw new Error("Matrix dimensions do not match for subtraction.");
+
+        const result = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                result[i][j] = A[i][j] - B[i][j];
+            }
+        }
+
+        return result;
+    }
+
+    // Helper function to create an identity matrix
+    function identityMatrix(size) {
+        const I = Array.from({ length: size }, () => Array(size).fill(0));
+        for (let i = 0; i < size; i++) {
+            I[i][i] = 1;
+        }
+        return I;
+    }
+
+    // Iterative Matrix Inversion
+    function iterativeMatrixInversion(A, maxIterations = 100, tolerance = 1e-6) {
+        const n = A.length;
+
+        // Compute initial guess based on trace and Frobenius norm
+        const tr = trace(A);
+        const frobNormSq = frobeniusNormSquared(A);
+        const alpha = tr / frobNormSq;
+        let X = identityMatrix(n).map(row => row.map(val => val * alpha));
+
+        // Iterative refinement
+        for (let iteration = 0; iteration < maxIterations; iteration++) {
+            const AX = multiplyMatrices(A, X);
+            const residual = subtractMatrices(identityMatrix(n), AX);
+
+            // Check for convergence
+            const residualNorm = Math.sqrt(frobeniusNormSquared(residual));
+            if (residualNorm < tolerance) {
+                return { inverse: X, iterations: iteration + 1 };
+            }
+
+            // Update X
+            X = multiplyMatrices(X, subtractMatrices(multiplyMatrices(2, identityMatrix(n)), AX));
+        }
+
+        throw new Error("The method did not converge within the maximum number of iterations.");
+    }
+
+    // Function to compute the inverse and display the result
+    function computeInverse() {
+        try {
+            // Get user inputs
+            const matrixString = document.getElementById("matrix").value;
+            const maxIterations = parseInt(document.getElementById("maxIterations").value);
+            const tolerance = parseFloat(document.getElementById("tolerance").value);
+
+            // Parse the matrix
+            const A = parseMatrix(matrixString);
+
+            // Validate that the matrix is square
+            if (A.length === 0 || A[0].length === 0) {
+                throw new Error("The matrix is empty or improperly formatted.");
+            }
+            if (A.length !== A[0].length) {
+                throw new Error("The matrix must be square.");
+            }
+
+            // Initial guess for the inverse (based on trace and Frobenius norm)
+            const tr = trace(A);
+            const frobNormSq = frobeniusNormSquared(A);
+            const alpha = tr / frobNormSq;
+            const B = identityMatrix(A.length).map(row => row.map(val => val * alpha));
+
+            // Compute the inverse using the iterative method
+            const result = iterativeInverse(A, B, tolerance, maxIterations);
+
+            // Format the result as a string
+            const inverseString = result.map(row => row.map(val => val.toFixed(6)).join(", ")).join("; ");
+            document.getElementById("result").innerHTML = `
+            Inverse:<br>
+            ${inverseString}<br>
+            Iterations: ${maxIterations}
+        `;
+        } catch (error) {
+            // Handle errors
+            document.getElementById("result").innerHTML = error.message;
+        }
+    }
+</script>
 </body>
 </html>

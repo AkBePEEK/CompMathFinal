@@ -2,9 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Linear Curve Fitting (Least Squares)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
+<h1>Linear Curve Fitting (Least Squares)</h1>
 
+<label for="dataPoints">Enter Data Points (e.g., "(1,2), (2,3), (3,5), (4,7), (5,11)"):</label><br>
+<input type="text" id="dataPoints" placeholder="(1,2), (2,3), (3,5), (4,7), (5,11)"><br><br>
+
+<button onclick="fitLine()">Fit Line</button>
+
+<h2>Results:</h2>
+<p id="equation"></p>
+<canvas id="graphCanvas" width="400" height="400"></canvas>
+
+<script>
+    function parseInput(input) {
+        return input.match(/\((-?\d*\.?\d+),\s*(-?\d*\.?\d+)\)/g)
+            .map(pair => pair.match(/-?\d*\.?\d+/g).map(Number));
+    }
+
+    function leastSquares(x, y) {
+        let n = x.length;
+        let xMean = x.reduce((a, b) => a + b, 0) / n;
+        let yMean = y.reduce((a, b) => a + b, 0) / n;
+
+        let numerator = x.reduce((sum, xi, i) => sum + (xi - xMean) * (y[i] - yMean), 0);
+        let denominator = x.reduce((sum, xi) => sum + (xi - xMean) ** 2, 0);
+
+        let m = numerator / denominator;
+        let b = yMean - m * xMean;
+
+        return { m, b };
+    }
+
+    function fitLine() {
+        try {
+            let input = document.getElementById("dataPoints").value;
+            let data = parseInput(input);
+
+            let x = data.map(p => p[0]);
+            let y = data.map(p => p[1]);
+
+            let { m, b } = leastSquares(x, y);
+            let equation = y = `${m.toFixed(2)}x + ${b.toFixed(2)}`;
+            document.getElementById("equation").innerText = "Fitted Line: " + equation;
+
+            drawGraph(x, y, m, b);
+        } catch (error) {
+            document.getElementById("equation").innerText = "Invalid input! Please check your format.";
+        }
+    }
+
+    function drawGraph(x, y, m, b) {
+        let ctx = document.getElementById("graphCanvas").getContext("2d");
+        let fittedY = x.map(xi => m * xi + b);
+
+        new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Data Points',
+                        data: x.map((xi, i) => ({ x: xi, y: y[i] })),
+                        backgroundColor: 'blue'
+                    },
+                    {
+                        label: 'Fitted Line',
+                        data: [{ x: Math.min(...x), y: m * Math.min(...x) + b },
+                            { x: Math.max(...x), y: m * Math.max(...x) + b }],
+                        type: 'line',
+                        borderColor: 'red',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { type: 'linear', position: 'bottom' },
+                    y: { type: 'linear' }
+                }
+            }
+        });
+    }
+</script>
 </body>
 </html>

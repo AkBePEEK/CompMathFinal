@@ -2,9 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Bisection and Secant Method</title>
+    <script src="../index.js"></script>
 </head>
 <body>
+<h1>Bisection and Secant Method</h1>
+<label for="function">Enter the function</label><br>
+<input type="text" id="function" placeholder="For example: f(x) = x^2 + x + 1"> <br>
+<label for="interval">Enter the interval</label><br>
+<input type="text" id="interval" placeholder="For example: 0, 2"> <br>
+<label for="tolerance">Enter the tolerance</label><br>
+<input type="text" id="tolerance" placeholder="For example: 10^-6"> <br>
+<input type="button" onclick="calculate()" value="Calculate">
+<p id="result"></p>
+<script>
+    function calculate() {
+        let f = document.getElementById("function").value;
+        let interval = document.getElementById("interval").value.split(", ");
+        let f_new = replacePowerWithPow(f)
+        let tol = replacePowerWithPow(document.getElementById("tolerance").value) || Math.pow(10, -6)
+        let bisect_root = bisectionMethod((x) => {eval(f_new.replace(/x/g, x))}, interval[0] * 1, interval[1] * 1, tol * 1);
+        let secant_root = secantMethod((x) => {eval(f_new.replace(/x/g, x))}, interval[0] * 1, interval[1] * 1, tol * 1);
+        document.getElementById("result").innerHTML = `<p>Bisection root: ${bisect_root[0]}</p><br><p>Secant root: ${secant_root[0]}</p><br><p>Iterations of bisection method and secant method:${bisect_root[1]} and ${secant_root}</p><br><p>Relative error: ${relativeError(bisect_root[0], secant_root[0])}</p>`;
+    }
 
+    function replacePowerWithPow(expression) {
+        // Regular expression to match patterns like x^2, (x+y)^3, etc.
+        const powerRegex = /([a-zA-Z0-9\(\)]+)\^([a-zA-Z0-9\(\)]+)/g;
+
+        // Replace all instances of power notation with Math.pow()
+        const replacedExpression = expression.replace(powerRegex, (match, base, exponent) => {
+            return `Math.pow(${base}, ${exponent})`;
+        });
+
+        return replacedExpression;
+    }
+</script>
 </body>
 </html>

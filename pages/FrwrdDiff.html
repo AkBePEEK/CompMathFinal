@@ -2,9 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Newton’s Forward Difference - First Derivative</title>
 </head>
 <body>
+<h1>Newton’s Forward Difference - First Derivative</h1>
 
+<label for="xValues">Enter x values (comma-separated):</label><br>
+<input type="text" id="xValues" placeholder="0, 1, 2"><br><br>
+
+<label for="yValues">Enter y values (comma-separated):</label><br>
+<input type="text" id="yValues" placeholder="1, 8, 27"><br><br>
+
+<label for="differentiateX">Enter x to estimate dy/dx:</label><br>
+<input type="number" id="differentiateX" step="any" placeholder="1"><br><br>
+
+<button onclick="calculateDerivative()">Estimate dy/dx</button>
+
+<h2>Result:</h2>
+<p id="result"></p>
+
+<script>
+    function parseInput(input) {
+        return input.split(",").map(Number);
+    }
+
+    function newtonsForwardDifference(x, y, x_target) {
+        let n = y.length;
+        let forwardDiff = Array(n).fill(0).map(() => Array(n).fill(0));
+
+        for (let i = 0; i < n; i++) {
+            forwardDiff[i][0] = y[i];
+        }
+
+        for (let j = 1; j < n; j++) {
+            for (let i = 0; i < n - j; i++) {
+                forwardDiff[i][j] = forwardDiff[i + 1][j - 1] - forwardDiff[i][j - 1];
+            }
+        }
+
+        let h = x[1] - x[0];
+        let index = x.indexOf(x_target);
+        if (index === -1) {
+            throw new Error("The entered x is not in the given x values.");
+        }
+
+        return forwardDiff[index][1] / h;
+    }
+
+    function calculateDerivative() {
+        try {
+            let x = parseInput(document.getElementById("xValues").value);
+            let y = parseInput(document.getElementById("yValues").value);
+            let x_target = parseFloat(document.getElementById("differentiateX").value);
+
+            if (x.length !== y.length) {
+                throw new Error("x and y must have the same number of points.");
+            }
+
+            let result = newtonsForwardDifference(x, y, x_target);
+            document.getElementById("result").innerHTML = `First derivative at x = ${x_target}: ${result.toFixed(6)}`;
+        } catch (error) {
+            document.getElementById("result").innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+        }
+    }
+</script>
 </body>
 </html>

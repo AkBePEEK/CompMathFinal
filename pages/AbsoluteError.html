@@ -2,9 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="../index.js" defer></script>
+    <title>Absolute Error</title>
 </head>
 <body>
+<h1>Absolute Error</h1>
+<label for="function">Enter the function</label><br>
+<input type="text" id="function" placeholder="For example: f(x) = x^2 + x + 1"> <br>
+<label for="interval">Enter the interval</label><br>
+<input type="text" id="interval" placeholder="For example: 0, 2"> <br>
+<label for="approx">Approximate Root</label><br>
+<input type="text" id="approx" placeholder="Approximate Root"> <br>
+<input type="button" onclick="calculate()" value="Calculate">
+<div id="plot" style="width:100%;max-width:700px"></div>
+<p>Answer:</p>
+<p id="result"></p>
+<script>
+    function calculate() {
+        let f = document.getElementById("function").value;
+        let interval = document.getElementById("interval").value.split(", ");
+        let Y = [], X = [];
+        let f_new = replacePowerWithPow(f);
+        let approx = document.getElementById("approx").value * 1;
 
+        for (let x = 0; x < interval[1] - interval[0]; x+=0.1) {
+            Y.push(eval(f_new));
+            X.push(x);
+        }
+        const data = [{x: X, y: Y, type: 'scatter', mode: 'lines'}]
+        Plotly.newPlot("plot", data, {title:`y=${f}`});
+
+        try {
+            // Use the Bisection Method to find the root
+            let root = bisectionMethod((x) => {eval(f_new.replace(/x/g, x))}, interval[0] * 1, interval[1] * 1, Math.pow(10, -6));
+
+            // Display the result
+            document.getElementById("result").innerHTML = absoluteError(approx, root);
+        } catch (error) {
+            // Handle errors (e.g., invalid interval)
+            document.getElementById("result").innerHTML = error.message;
+        }
+    }
+
+    function replacePowerWithPow(expression) {
+        // Regular expression to match patterns like x^2, (x+y)^3, etc.
+        const powerRegex = /([a-zA-Z0-9\(\)]+)\^([a-zA-Z0-9\(\)]+)/g;
+
+        // Replace all instances of power notation with Math.pow()
+        const replacedExpression = expression.replace(powerRegex, (match, base, exponent) => {
+            return `Math.pow(${base}, ${exponent})`;
+        });
+
+        return replacedExpression;
+    }
+</script>
 </body>
 </html>
